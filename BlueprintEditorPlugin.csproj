@@ -34,6 +34,9 @@
     <Reference Include="FrostyCore">
       <HintPath>..\FrostyToolSuite\FrostyEditor\bin\Developer\Debug\FrostyCore.dll</HintPath>
     </Reference>
+    <Reference Include="FrostyEditor">
+      <HintPath>..\FrostyToolSuite\FrostyEditor\bin\Developer\Debug\FrostyEditor.exe</HintPath>
+    </Reference>
     <Reference Include="FrostyHash">
       <HintPath>..\FrostyToolSuite\FrostyEditor\bin\Developer\Debug\FrostyHash.dll</HintPath>
     </Reference>
@@ -111,15 +114,9 @@
 
   <!-- This is for copying our binaries into the plugins folder -->
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <!-- Replace the second directory with the directory to your frosty's plugins folder -->
-    <Exec Condition="'$(Configuration)|$(Platform)' == 'Developer - Debug|x64'" Command="xcopy /Y $(TargetPath) ..\..\1063\FrostyToolsuite\FrostyEditor\bin\Developer\Debug\Plugins\" />
-    <Exec Condition="'$(Configuration)|$(Platform)' == 'Developer - Debug|x64'" Command="xcopy /Y $(ProjectDir)Editors\BlueprintEditor\Nodes\TypeMapping\Configs\ ..\..\1063\FrostyToolsuite\FrostyEditor\bin\Developer\Debug\BlueprintEditor\NodeMappings" />
-    <Exec Condition="'$(Configuration)|$(Platform)' == 'Release - Final|x64'" Command="xcopy /Y $(TargetPath) ..\..\1063\FrostyToolsuite\FrostyEditor\bin\Release\Final\Plugins\" />
-    <Exec Condition="'$(Configuration)|$(Platform)' == 'Release - Final|x64'" Command="xcopy /Y $(ProjectDir)Editors\BlueprintEditor\Nodes\TypeMapping\Configs\ ..\..\1063\FrostyToolsuite\FrostyEditor\bin\Release\Final\BlueprintEditor\NodeMappings" />
-    
-    <!-- And replace the DestinationFolder here to be your frosty's plugins directory as well -->
-    <Copy Condition="'$(Configuration)|$(Platform)' == 'Developer - Debug|x64'" SourceFiles="bin\Developer\Debug\Prism.dll" DestinationFolder="..\..\1063\FrostyToolsuite\FrostyEditor\bin\Developer\Debug\Plugins\" />
-    <Copy Condition="'$(Configuration)|$(Platform)' == 'Release - Final|x64'" SourceFiles="bin\Release\Final\Prism.dll" DestinationFolder="..\..\1063\FrostyToolsuite\FrostyEditor\bin\Release\Final\Plugins\" />
+	<Exec Command="xcopy /Y &quot;$(TargetPath)&quot; &quot;E:\C#\Frosty\FrostyToolSuite\FrostyEditor\bin\Developer\Debug\Plugins&quot;" />
+	<Exec Command="xcopy /Y &quot;$(ProjectDir)Editors\BlueprintEditor\Nodes\TypeMapping\Configs&quot; &quot;E:\C#\Frosty\FrostyToolSuite\FrostyEditor\bin\Developer\Debug\BlueprintEditor\NodeMappings&quot;" />
+	<Copy SourceFiles="bin\Developer\Debug\Prism.dll" DestinationFolder="E:\C#\Frosty\FrostyToolSuite\FrostyEditor\bin\Developer\Debug\Plugins\" />
   </Target>
 
   <PropertyGroup>
