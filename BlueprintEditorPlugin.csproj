@@ -29,19 +29,16 @@
   <!-- Replace "..\..\1063\" with the directory to your FrostyToolsuite folder -->
   <ItemGroup>
     <Reference Include="FrostyControls">
-      <HintPath>..\..\1063\FrostyToolsuite\FrostyEditor\bin\Developer\Debug\FrostyControls.dll</HintPath>
+      <HintPath>..\FrostyToolSuite\FrostyEditor\bin\Developer\Debug\FrostyControls.dll</HintPath>
     </Reference>
     <Reference Include="FrostyCore">
-      <HintPath>..\..\1063\FrostyToolsuite\FrostyEditor\bin\Developer\Debug\FrostyCore.dll</HintPath>
-    </Reference>
-    <Reference Include="FrostyEditor">
-      <HintPath>..\..\1063\FrostyToolsuite\FrostyEditor\bin\Developer\Debug\FrostyEditor.exe</HintPath>
+      <HintPath>..\FrostyToolSuite\FrostyEditor\bin\Developer\Debug\FrostyCore.dll</HintPath>
     </Reference>
     <Reference Include="FrostyHash">
-      <HintPath>..\..\1063\FrostyToolsuite\FrostyEditor\bin\Developer\Debug\FrostyHash.dll</HintPath>
+      <HintPath>..\FrostyToolSuite\FrostyEditor\bin\Developer\Debug\FrostyHash.dll</HintPath>
     </Reference>
     <Reference Include="FrostySdk">
-      <HintPath>..\..\1063\FrostyToolsuite\FrostyEditor\bin\Developer\Debug\FrostySdk.dll</HintPath>
+      <HintPath>..\FrostyToolSuite\FrostyEditor\bin\Developer\Debug\FrostySdk.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="PresentationCore" />
