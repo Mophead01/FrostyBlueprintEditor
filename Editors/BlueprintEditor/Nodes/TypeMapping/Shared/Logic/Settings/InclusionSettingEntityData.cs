@@ -1,10 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using BlueprintEditorPlugin.Editors.BlueprintEditor.Connections;
 using BlueprintEditorPlugin.Editors.BlueprintEditor.Nodes.Ports;
 using BlueprintEditorPlugin.Models.Nodes.Ports;
 using Frosty.Core.Controls;
 using FrostySdk.Ebx;
+using BlueprintEditorPlugin.Models.Entities.Networking;
 
 namespace BlueprintEditorPlugin.Editors.BlueprintEditor.Nodes.TypeMapping.Shared.Comparison
 {
@@ -22,16 +24,11 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor.Nodes.TypeMapping.Shared
                 Footer = $"{settingName}:\t{string.Join(",", settings.Select(setName => $"\"{setName}\""))}";
             }
         }
-
-        public InclusionSettingNode()
+        public override void OnCreation()
         {
-            Inputs = new ObservableCollection<IPort>()
-            {
-            };
-            Outputs = new ObservableCollection<IPort>()
-            {
-                new PropertyOutput("Value", this)
-            };
+            base.OnCreation();
+
+            AddOutput("Value", ConnectionType.Property);
         }
     }
 }
