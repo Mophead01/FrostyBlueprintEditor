@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Windows;
+using BlueprintEditorPlugin.BlueprintUtils;
 using BlueprintEditorPlugin.Editors.BlueprintEditor.Connections;
 using BlueprintEditorPlugin.Editors.BlueprintEditor.Nodes;
 using BlueprintEditorPlugin.Editors.BlueprintEditor.NodeWrangler;
@@ -19,7 +20,7 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor.NodeWrangler
 {
     public class UIWidgetNodeWrangler : EntityNodeWrangler
     {
-        private Dictionary<string, EntityNode> _layerNameCache = new Dictionary<string, EntityNode>();
+        public Dictionary<string, EntityNode> LayerNameCache = new();
 
         /// <summary>
         /// The root component of this asset
@@ -52,7 +53,7 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor.NodeWrangler
                         if (result != MessageBoxResult.Yes)
                             return;
 
-                        if (!_layerNameCache.ContainsKey(args.LayerName))
+                        if (!LayerNameCache.ContainsKey(args.LayerName))
                         {
                             App.Logger.LogError("Unable to find layer {0}", args.LayerName);
                             return;
@@ -62,7 +63,7 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor.NodeWrangler
                         InternalNodeCache.Add(entityNode.InternalGuid, entityNode);
                         PointerRef pointerRef = new PointerRef(entityNode.Object);
                         
-                        EntityNode layer = _layerNameCache[args.LayerName];
+                        EntityNode layer = LayerNameCache[args.LayerName];
                         ((dynamic)layer.Object).Elements.Add(pointerRef);
                     }
                     else
@@ -74,7 +75,7 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor.NodeWrangler
                         if (entityNode.ObjectType == "UIElementLayerEntityData")
                         {
                             ((dynamic)Asset.RootObject).Object.Internal.Layers.Add(pointerRef);
-                            _layerNameCache.Add(entityNode.TryGetProperty("LayerName").ToString(), entityNode);
+                            LayerNameCache.Add(entityNode.TryGetProperty("LayerName").ToString(), entityNode);
                         }
                         else
                         {
@@ -94,12 +95,12 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor.NodeWrangler
                             if (interfaceNode.Direction == PortDirection.In)
                             {
                                 intrfc.OutputEvents.Add((dynamic)interfaceNode.SubObject);
-                                InterfaceEiCache.Add(interfaceNode.Header, interfaceNode);
+                                InterfaceEiCache.Add(HashingUtils.SmartHashString(interfaceNode.Header), interfaceNode);
                             }
                             else
                             {
                                 intrfc.InputEvents.Add((dynamic)interfaceNode.SubObject);
-                                InterfaceEoCache.Add(interfaceNode.Header, interfaceNode);
+                                InterfaceEoCache.Add(HashingUtils.SmartHashString(interfaceNode.Header), interfaceNode);
                             }
                         } break;
                         case ConnectionType.Link:
@@ -108,12 +109,12 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor.NodeWrangler
                             if (interfaceNode.Direction == PortDirection.In)
                             {
                                 intrfc.OutputLinks.Add((dynamic)interfaceNode.SubObject);
-                                InterfaceLiCache.Add(interfaceNode.Header, interfaceNode);
+                                InterfaceLiCache.Add(HashingUtils.SmartHashString(interfaceNode.Header), interfaceNode);
                             }
                             else
                             {
                                 intrfc.InputLinks.Add((dynamic)interfaceNode.SubObject);
-                                InterfaceLoCache.Add(interfaceNode.Header, interfaceNode);
+                                InterfaceLoCache.Add(HashingUtils.SmartHashString(interfaceNode.Header), interfaceNode);
                             }
                         } break;
                         case ConnectionType.Property:
@@ -123,11 +124,11 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor.NodeWrangler
                             
                             if (interfaceNode.Direction == PortDirection.In)
                             {
-                                InterfacePiCache.Add(interfaceNode.Header, interfaceNode);
+                                InterfacePiCache.Add(HashingUtils.SmartHashString(interfaceNode.Header), interfaceNode);
                             }
                             else
                             {
-                                InterfacePoCache.Add(interfaceNode.Header, interfaceNode);
+                                InterfacePoCache.Add(HashingUtils.SmartHashString(interfaceNode.Header), interfaceNode);
                             }
                         } break;
                     }
@@ -188,7 +189,7 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor.NodeWrangler
                                 RemoveVertex(elementNode); // TODO: Big stutter issue? We're doing a lot with this we don't need to
                             }
 
-                            _layerNameCache.Remove(entityNode.TryGetProperty("LayerName").ToString());
+                            LayerNameCache.Remove(entityNode.TryGetProperty("LayerName").ToString());
                         }
                         else
                         {
@@ -206,12 +207,12 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor.NodeWrangler
                         {
                             if (interfaceNode.Direction == PortDirection.In)
                             {
-                                InterfaceEiCache.Remove(interfaceNode.Header);
+                                InterfaceEiCache.Remove(HashingUtils.SmartHashString(interfaceNode.Header));
                                 ((dynamic)interfaceNode.Object).OutputEvents.Remove((dynamic)interfaceNode.SubObject);
                             }
                             else
                             {
-                                InterfaceEoCache.Remove(interfaceNode.Header);
+                                InterfaceEoCache.Remove(HashingUtils.SmartHashString(interfaceNode.Header));
                                 ((dynamic)interfaceNode.Object).InputEvents.Remove((dynamic)interfaceNode.SubObject);
                             }
                         } break;
@@ -219,12 +220,12 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor.NodeWrangler
                         {
                             if (interfaceNode.Direction == PortDirection.In)
                             {
-                                InterfaceLiCache.Remove(interfaceNode.Header);
+                                InterfaceLiCache.Remove(HashingUtils.SmartHashString(interfaceNode.Header));
                                 ((dynamic)interfaceNode.Object).OutputLinks.Remove((dynamic)interfaceNode.SubObject);
                             }
                             else
                             {
-                                InterfaceLoCache.Remove(interfaceNode.Header);
+                                InterfaceLoCache.Remove(HashingUtils.SmartHashString(interfaceNode.Header));
                                 ((dynamic)interfaceNode.Object).InputLinks.Remove((dynamic)interfaceNode.SubObject);
                             }
                         } break;
@@ -232,7 +233,7 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor.NodeWrangler
                         {
                             if (interfaceNode.Direction == PortDirection.In)
                             {
-                                InterfacePiCache.Remove(interfaceNode.Header);
+                                InterfacePiCache.Remove(HashingUtils.SmartHashString(interfaceNode.Header));
                                 ((dynamic)interfaceNode.Object).Fields.Remove((dynamic)interfaceNode.SubObject);
                                 if (((dynamic)interfaceNode.SubObject).AccessType.ToString() == "FieldAccessType_SourceAndTarget")
                                 {
@@ -246,7 +247,7 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor.NodeWrangler
                             }
                             else
                             {
-                                InterfacePoCache.Remove(interfaceNode.Header);
+                                InterfacePoCache.Remove(HashingUtils.SmartHashString(interfaceNode.Header));
                                 ((dynamic)interfaceNode.Object).Fields.Remove((dynamic)interfaceNode.SubObject);
                                 if (((dynamic)interfaceNode.SubObject).AccessType.ToString() == "FieldAccessType_SourceAndTarget")
                                 {
@@ -271,7 +272,7 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor.NodeWrangler
         /// <returns>The <see cref="EntityNode"/> of containing the layer, null if not found</returns>
         private EntityNode GetLayerFromNode(EntityNode node)
         {
-            foreach (EntityNode layerNode in _layerNameCache.Values)
+            foreach (EntityNode layerNode in LayerNameCache.Values)
             {
                 dynamic elements = layerNode.TryGetProperty("Elements");
                 if (elements == null)

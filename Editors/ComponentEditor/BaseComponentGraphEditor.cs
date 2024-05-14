@@ -3,6 +3,7 @@ using System.Linq;
 using System.Windows;
 using BlueprintEditorPlugin.Editors.BlueprintEditor;
 using BlueprintEditorPlugin.Editors.BlueprintEditor.Connections;
+using BlueprintEditorPlugin.Editors.BlueprintEditor.LayoutManager;
 using BlueprintEditorPlugin.Editors.BlueprintEditor.Nodes;
 using BlueprintEditorPlugin.Editors.BlueprintEditor.Nodes.Ports;
 using BlueprintEditorPlugin.Editors.BlueprintEditor.NodeWrangler;
@@ -12,6 +13,7 @@ using BlueprintEditorPlugin.Models.Entities;
 using BlueprintEditorPlugin.Models.Nodes.Ports;
 using Frosty.Core.Controls;
 using FrostyEditor;
+using FrostySdk;
 using FrostySdk.Ebx;
 using FrostySdk.IO;
 using FrostySdk.Managers;
@@ -29,7 +31,7 @@ namespace BlueprintEditorPlugin.Editors.ComponentEditor
             Type assetType = asset.RootObject.GetType();
 
             // Let the UI editor handle this
-            if (assetType.Name == "UIWidgetBlueprint")
+            if (assetType.Name == "UIWidgetBlueprint" && ProfilesLibrary.ProfileName != "starwarsbattlefrontii")
             {
                 return false;
             }
@@ -60,6 +62,13 @@ namespace BlueprintEditorPlugin.Editors.ComponentEditor
         {
             EntityNodeWrangler wrangler = (EntityNodeWrangler)NodeWrangler;
             wrangler.Asset = App.AssetManager.GetEbx(assetEntry);
+            
+            EntityLayoutManager layoutManager = ExtensionsManager.GetValidLayoutManager(assetEntry);
+            if (layoutManager != null)
+            {
+                LayoutManager = layoutManager;
+                LayoutManager.NodeWrangler = NodeWrangler;
+            }
 
             CheapMethod cheap = new CheapMethod(NodeWrangler);
             foreach (object assetObject in wrangler.Asset.Objects)
@@ -209,7 +218,7 @@ namespace BlueprintEditorPlugin.Editors.ComponentEditor
                 
                 if (sourceNode.GetOutput(propertyConnection.SourceField, ConnectionType.Property) == null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(delegate
                     {
                         sourceNode.AddOutput(new PropertyOutput(propertyConnection.SourceField, sourceNode));
                     });
@@ -217,7 +226,7 @@ namespace BlueprintEditorPlugin.Editors.ComponentEditor
                 
                 if (targetNode.GetInput(propertyConnection.TargetField, ConnectionType.Property) == null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(delegate
                     {
                         targetNode.AddInput(new PropertyInput(propertyConnection.TargetField, targetNode));
                     });
@@ -306,7 +315,7 @@ namespace BlueprintEditorPlugin.Editors.ComponentEditor
                 
                 if (sourceNode.GetOutput(linkConnection.SourceField, ConnectionType.Link) == null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(delegate
                     {
                         sourceNode.AddOutput(new LinkOutput(linkConnection.SourceField, sourceNode));
                     });
@@ -314,7 +323,7 @@ namespace BlueprintEditorPlugin.Editors.ComponentEditor
                 
                 if (targetNode.GetInput(linkConnection.TargetField, ConnectionType.Link) == null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(delegate
                     {
                         targetNode.AddInput(new LinkInput(linkConnection.TargetField, targetNode));
                     });
@@ -403,7 +412,7 @@ namespace BlueprintEditorPlugin.Editors.ComponentEditor
                 
                 if (sourceNode.GetOutput(eventConnection.SourceEvent.Name, ConnectionType.Event) == null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(delegate
                     {
                         sourceNode.AddOutput(new EventOutput(eventConnection.SourceEvent.Name, sourceNode));
                     });
@@ -411,7 +420,7 @@ namespace BlueprintEditorPlugin.Editors.ComponentEditor
                 
                 if (targetNode.GetInput(eventConnection.TargetEvent.Name, ConnectionType.Event) == null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(delegate
                     {
                         targetNode.AddInput(new EventInput(eventConnection.TargetEvent.Name, targetNode));
                     });

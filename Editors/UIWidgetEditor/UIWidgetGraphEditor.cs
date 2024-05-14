@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using BlueprintEditorPlugin.Editors.BlueprintEditor;
 using BlueprintEditorPlugin.Editors.BlueprintEditor.Connections;
+using BlueprintEditorPlugin.Editors.BlueprintEditor.LayoutManager;
 using BlueprintEditorPlugin.Editors.BlueprintEditor.Nodes;
 using BlueprintEditorPlugin.Editors.BlueprintEditor.Nodes.Ports;
 using BlueprintEditorPlugin.Editors.BlueprintEditor.NodeWrangler;
@@ -21,6 +22,13 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor
 {
     public class UIWidgetGraphEditor : BlueprintGraphEditor
     {
+        public override bool IsValid()
+        {
+            // swbf2 handles its UI widgets in a dumb way
+            // Layers lack names for example and elements are given weird names too
+            return ProfilesLibrary.ProfileName != "starwarsbattlefrontii";
+        }
+
         public override bool IsValid(EbxAssetEntry assetEntry)
         {
             EbxAsset asset = App.AssetManager.GetEbx(assetEntry);
@@ -31,8 +39,15 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor
         
         public override void LoadAsset(EbxAssetEntry assetEntry)
         {
-            EntityNodeWrangler wrangler = (EntityNodeWrangler)NodeWrangler;
+            UIWidgetNodeWrangler wrangler = (UIWidgetNodeWrangler)NodeWrangler;
             wrangler.Asset = App.AssetManager.GetEbx(assetEntry);
+            
+            EntityLayoutManager layoutManager = ExtensionsManager.GetValidLayoutManager(assetEntry);
+            if (layoutManager != null)
+            {
+                LayoutManager = layoutManager;
+                LayoutManager.NodeWrangler = NodeWrangler;
+            }
 
             CheapMethod cheap = new CheapMethod(NodeWrangler);
             foreach (object assetObject in wrangler.Asset.Objects)
@@ -98,6 +113,10 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor
                 }
 
                 EntityNode node = EntityNode.GetNodeFromEntity(assetObject, NodeWrangler);
+                if (node.ObjectType == "UIElementLayerEntityData")
+                {
+                    wrangler.LayerNameCache.Add(node.TryGetProperty("LayerName").ToString(), node);
+                }
                 cheap.SortGraph(node);
                 
                 wrangler.AddVertexTransient(node);
@@ -182,7 +201,7 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor
                 
                 if (sourceNode.GetOutput(propertyConnection.SourceField, ConnectionType.Property) == null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(delegate
                     {
                         sourceNode.AddOutput(new PropertyOutput(propertyConnection.SourceField, sourceNode));
                     });
@@ -190,7 +209,7 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor
                 
                 if (targetNode.GetInput(propertyConnection.TargetField, ConnectionType.Property) == null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(delegate
                     {
                         targetNode.AddInput(new PropertyInput(propertyConnection.TargetField, targetNode));
                     });
@@ -279,7 +298,7 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor
                 
                 if (sourceNode.GetOutput(linkConnection.SourceField, ConnectionType.Link) == null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(delegate
                     {
                         sourceNode.AddOutput(new LinkOutput(linkConnection.SourceField, sourceNode));
                     });
@@ -287,7 +306,7 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor
                 
                 if (targetNode.GetInput(linkConnection.TargetField, ConnectionType.Link) == null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(delegate
                     {
                         targetNode.AddInput(new LinkInput(linkConnection.TargetField, targetNode));
                     });
@@ -376,7 +395,7 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor
                 
                 if (sourceNode.GetOutput(eventConnection.SourceEvent.Name, ConnectionType.Event) == null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(delegate
                     {
                         sourceNode.AddOutput(new EventOutput(eventConnection.SourceEvent.Name, sourceNode));
                     });
@@ -384,7 +403,7 @@ namespace BlueprintEditorPlugin.Editors.UIWidgetEditor
                 
                 if (targetNode.GetInput(eventConnection.TargetEvent.Name, ConnectionType.Event) == null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(delegate
                     {
                         targetNode.AddInput(new EventInput(eventConnection.TargetEvent.Name, targetNode));
                     });

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -6,8 +7,10 @@ using System.Windows;
 using System.Windows.Controls;
 using BlueprintEditorPlugin.Attributes;
 using BlueprintEditorPlugin.Editors.BlueprintEditor.Extensions;
+using BlueprintEditorPlugin.Editors.BlueprintEditor.LayoutManager;
 using BlueprintEditorPlugin.Editors.BlueprintEditor.Nodes;
 using BlueprintEditorPlugin.Editors.GraphEditor;
+using BlueprintEditorPlugin.Editors.GraphEditor.LayoutManager;
 using BlueprintEditorPlugin.Editors.GraphEditor.LayoutManager.Algorithms;
 using BlueprintEditorPlugin.Models.Nodes;
 using FrostyEditor;
@@ -22,14 +25,17 @@ namespace BlueprintEditorPlugin
     /// </summary>
     public static class ExtensionsManager
     {
-        public static readonly Dictionary<string, Type> EntityNodeExtensions = new Dictionary<string, Type>();
-        public static readonly Dictionary<string, Type> TransientNodeExtensions = new Dictionary<string, Type>();
+        public static readonly Dictionary<string, Type> EntityNodeExtensions = new();
+        public static readonly Dictionary<string, Type> TransientNodeExtensions = new();
         
-        private static List<Type> _graphEditors = new List<Type>();
+        private static List<Type> _graphEditors = new();
         public static IEnumerable<Type> GraphEditorExtensions => _graphEditors;
 
-        private static List<Type> _blueprintMenuItems = new List<Type>();
+        private static List<Type> _blueprintMenuItems = new();
         public static IEnumerable<Type> BlueprintMenuItemExtensions => _blueprintMenuItems;
+        
+        private static List<Type> _entityLayoutManagers = new();
+        public static IEnumerable<Type> EntityLayoutManagers => _entityLayoutManagers;
 
         /// <summary>
         /// Initiates the ExtensionManager
@@ -100,23 +106,34 @@ namespace BlueprintEditorPlugin
             
             foreach (string item in Directory.EnumerateFiles("Plugins", "*.dll", SearchOption.AllDirectories))
             {
-                FileInfo fileInfo = new FileInfo(item);
-                Assembly plugin = Assembly.LoadFile(fileInfo.FullName);
-
-                foreach (Attribute attribute in plugin.GetCustomAttributes())
+                try
                 {
-                    if (attribute is RegisterEntityNode entityRegister)
+                    FileInfo fileInfo = new(item);
+                    Assembly plugin = Assembly.LoadFile(fileInfo.FullName);
+
+                    foreach (Attribute attribute in plugin.GetCustomAttributes())
                     {
-                        RegisterExtension(entityRegister);
+                        if (attribute is RegisterEntityNode entityRegister)
+                        {
+                            RegisterExtension(entityRegister);
+                        }
+                        else if (attribute is RegisterEbxGraphEditor graphRegister)
+                        {
+                            RegisterExtension(graphRegister);
+                        }
+                        else if (attribute is RegisterBlueprintMenuExtension menuExtension)
+                        {
+                            RegisterExtension(menuExtension);
+                        }
+                        else if (attribute is RegisterEntityLayoutExtension layoutExtension)
+                        {
+                            RegisterExtension(layoutExtension);
+                        }
                     }
-                    else if (attribute is RegisterEbxGraphEditor graphRegister)
-                    {
-                        RegisterExtension(graphRegister);
-                    }
-                    else if (attribute is RegisterBlueprintMenuExtension menuExtension)
-                    {
-                        RegisterExtension(menuExtension);
-                    }
+                }
+                catch (Exception )
+                {
+                    // Suppress all errors please!
                 }
             }
         }
@@ -134,7 +151,7 @@ namespace BlueprintEditorPlugin
                     // Override our internal extension with external one
                     _graphEditors.Add(graphRegister.GraphType);
                 }
-                else if (!(extension is Control))
+                else if (extension is not Control)
                 {
                     App.Logger.LogError("Graph editor {0} must be a control", graphRegister.GraphType.Name);
                 }
@@ -183,6 +200,22 @@ namespace BlueprintEditorPlugin
             }
         }
 
+        public static void RegisterExtension(RegisterEntityLayoutExtension layoutExtension)
+        {
+            try
+            {
+                var extension = (EntityLayoutManager)Activator.CreateInstance(layoutExtension.LayoutManagerType, new object[] { null });
+                if (extension.IsValid())
+                {
+                    _entityLayoutManagers.Add(layoutExtension.LayoutManagerType);
+                }
+            }
+            catch (Exception e)
+            {
+                App.Logger.LogError("Blueprint editor menu extension {0} threw the exception {1} at {2}", layoutExtension.LayoutManagerType.Name, e.Message, e.StackTrace);
+            }
+        }
+
         #endregion
 
         /// <summary>
@@ -198,6 +231,25 @@ namespace BlueprintEditorPlugin
                 if (graphEditor.IsValid(assetEntry))
                 {
                     return graphEditor;
+                }
+            }
+
+            return null;
+        }
+        
+        /// <summary>
+        /// Gets a valid <see cref="EntityLayoutManager"/> for the specified <see cref="EbxAssetEntry"/>
+        /// </summary>
+        /// <param name="assetEntry"></param>
+        /// <returns></returns>
+        public static EntityLayoutManager GetValidLayoutManager(EbxAssetEntry assetEntry)
+        {
+            foreach (Type layoutType in _entityLayoutManagers)
+            {
+                EntityLayoutManager layoutManager = (EntityLayoutManager)Activator.CreateInstance(layoutType, new object[] { null });
+                if (layoutManager.IsValid(assetEntry))
+                {
+                    return layoutManager;
                 }
             }
 

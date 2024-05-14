@@ -41,6 +41,11 @@ namespace BlueprintEditorPlugin.Editors.GraphEditor.LayoutManager
             }
         }
 
+        public virtual bool IsValid()
+        {
+            return true;
+        }
+
         public virtual void SortLayout(bool optimized = false)
         {
             if (optimized)
@@ -54,7 +59,7 @@ namespace BlueprintEditorPlugin.Editors.GraphEditor.LayoutManager
             sugiyamaMethod.SortGraph();
         }
 
-        public bool LayoutExists(string path)
+        public virtual bool LayoutExists(string path)
         {
             return File.Exists($"{CurrentLayoutPath}{path.Replace("/", "\\")}");
         }
@@ -120,7 +125,7 @@ namespace BlueprintEditorPlugin.Editors.GraphEditor.LayoutManager
             return true;
         }
 
-        public bool LoadLayoutRelative(string path)
+        public virtual bool LoadLayoutRelative(string path)
         {
             return LoadLayout($@"{CurrentLayoutPath}\{path.Replace("/", "\\")}");
         }

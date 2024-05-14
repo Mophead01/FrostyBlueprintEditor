@@ -331,12 +331,12 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor.Nodes
             return realm;
         }
 
-        public virtual void FixRealm()
+        public void FixRealm()
         {
             Realm = DetermineRealm();
         }
         
-        public virtual void ForceFixRealm()
+        public void ForceFixRealm()
         {
             Realm = DetermineRealm(true);
         }
@@ -677,6 +677,14 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor.Nodes
                     if (output.Realm == oldRealm)
                     {
                         output.Realm = Realm;
+                    }
+                }
+
+                foreach (IConnection connection in NodeWrangler.GetConnections(this))
+                {
+                    if (connection is EntityConnection entityConnection)
+                    {
+                        entityConnection.ForceFixRealm();
                     }
                 }
             }

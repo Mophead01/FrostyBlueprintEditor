@@ -97,6 +97,7 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
             
             InitializeComponent();
             NodePropertyGrid.NodeWrangler = NodeWrangler;
+            
             LayoutManager = new EntityLayoutManager(NodeWrangler);
 
             foreach (Type extensionType in ExtensionsManager.BlueprintMenuItemExtensions)
@@ -147,6 +148,12 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
         {
             EntityNodeWrangler wrangler = (EntityNodeWrangler)NodeWrangler;
             wrangler.Asset = App.AssetManager.GetEbx(assetEntry);
+            EntityLayoutManager layoutManager = ExtensionsManager.GetValidLayoutManager(assetEntry);
+            if (layoutManager != null)
+            {
+                LayoutManager = layoutManager;
+                LayoutManager.NodeWrangler = NodeWrangler;
+            }
 
             CheapMethod cheap = new CheapMethod(NodeWrangler);
             foreach (object assetObject in wrangler.Asset.Objects)
@@ -236,9 +243,20 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
                     }
                     case PointerRefType.Internal:
                     {
+                        if (source.Internal == null)
+                        {
+                            App.Logger.LogError("Reference in connection was invalid");
+                            continue;
+                        }
+                        
                         if (((dynamic)source.Internal).GetInstanceGuid() == wrangler.InterfaceGuid)
                         {
                             sourceNode = wrangler.GetInterfaceNode(propertyConnection.SourceField, PortDirection.Out, ConnectionType.Property);
+                            if (sourceNode == null)
+                            {
+                                App.Logger.LogError("Unable to find an interface entry by the name of {0}", propertyConnection.SourceField.ToString());
+                                continue;
+                            }
                         }
                         else
                         {
@@ -252,7 +270,14 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
                         {
                             // Import the node
                             EbxAsset asset = App.AssetManager.GetEbx(App.AssetManager.GetEbxEntry(source.External.FileGuid));
-                            sourceNode = EntityNode.GetNodeFromEntity(asset.GetObject(source.External.ClassGuid), source.External.FileGuid, NodeWrangler);
+                            object obj = asset.GetObject(source.External.ClassGuid);
+                            if (obj == null)
+                            {
+                                App.Logger.LogError("Reference in connection was invalid");
+                                return;
+                            }
+                            
+                            sourceNode = EntityNode.GetNodeFromEntity(obj, target.External.FileGuid, NodeWrangler);
                             cheap.SortGraph(sourceNode);
                         
                             wrangler.AddVertexTransient(sourceNode);
@@ -269,9 +294,20 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
                     }
                     case PointerRefType.Internal:
                     {
+                        if (target.Internal == null)
+                        {
+                            App.Logger.LogError("Reference in connection was invalid");
+                            continue;
+                        }
+                        
                         if (((dynamic)target.Internal).GetInstanceGuid() == wrangler.InterfaceGuid)
                         {
                             targetNode = wrangler.GetInterfaceNode(propertyConnection.TargetField, PortDirection.In, ConnectionType.Property);
+                            if (targetNode == null)
+                            {
+                                App.Logger.LogError("Unable to find an interface entry by the name of {0}", propertyConnection.TargetField.ToString());
+                                continue;
+                            }
                         }
                         else
                         {
@@ -286,7 +322,13 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
                         if (targetNode == null)
                         {
                             EbxAsset asset = App.AssetManager.GetEbx(App.AssetManager.GetEbxEntry(target.External.FileGuid));
-                            targetNode = EntityNode.GetNodeFromEntity(asset.GetObject(target.External.ClassGuid), target.External.FileGuid, NodeWrangler);
+                            object obj = asset.GetObject(target.External.ClassGuid);
+                            if (obj == null)
+                            {
+                                App.Logger.LogError("Reference in connection was invalid");
+                            }
+                            
+                            targetNode = EntityNode.GetNodeFromEntity(obj, target.External.FileGuid, NodeWrangler);
                             cheap.SortGraph(targetNode);
                         
                             wrangler.AddVertexTransient(targetNode);
@@ -296,7 +338,7 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
                 
                 if (sourceNode.GetOutput(propertyConnection.SourceField, ConnectionType.Property) == null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(delegate
                     {
                         sourceNode.AddOutput(new PropertyOutput(propertyConnection.SourceField, sourceNode));
                     });
@@ -304,7 +346,7 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
                 
                 if (targetNode.GetInput(propertyConnection.TargetField, ConnectionType.Property) == null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(delegate
                     {
                         targetNode.AddInput(new PropertyInput(propertyConnection.TargetField, targetNode));
                     });
@@ -336,6 +378,11 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
                         if (((dynamic)source.Internal).GetInstanceGuid() == wrangler.InterfaceGuid)
                         {
                             sourceNode = wrangler.GetInterfaceNode(linkConnection.SourceField, PortDirection.Out, ConnectionType.Link);
+                            if (sourceNode == null)
+                            {
+                                App.Logger.LogError("Unable to find an interface entry by the name of {0}", linkConnection.SourceField.ToString());
+                                continue;
+                            }
                         }
                         else
                         {
@@ -349,7 +396,14 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
                         {
                             // Import the node
                             EbxAsset asset = App.AssetManager.GetEbx(App.AssetManager.GetEbxEntry(source.External.FileGuid));
-                            sourceNode = EntityNode.GetNodeFromEntity(asset.GetObject(source.External.ClassGuid), source.External.FileGuid, NodeWrangler);
+                            object obj = asset.GetObject(source.External.ClassGuid);
+                            if (obj == null)
+                            {
+                                App.Logger.LogError("Reference in connection was invalid");
+                                return;
+                            }
+                            
+                            sourceNode = EntityNode.GetNodeFromEntity(obj, target.External.FileGuid, NodeWrangler);
                             cheap.SortGraph(sourceNode);
                         
                             wrangler.AddVertexTransient(sourceNode);
@@ -369,6 +423,11 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
                         if (((dynamic)target.Internal).GetInstanceGuid() == wrangler.InterfaceGuid)
                         {
                             targetNode = wrangler.GetInterfaceNode(linkConnection.TargetField, PortDirection.In, ConnectionType.Link);
+                            if (targetNode == null)
+                            {
+                                App.Logger.LogError("Unable to find an interface entry by the name of {0}", linkConnection.TargetField.ToString());
+                                continue;
+                            }
                         }
                         else
                         {
@@ -383,7 +442,14 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
                         if (targetNode == null)
                         {
                             EbxAsset asset = App.AssetManager.GetEbx(App.AssetManager.GetEbxEntry(target.External.FileGuid));
-                            targetNode = EntityNode.GetNodeFromEntity(asset.GetObject(target.External.ClassGuid), target.External.FileGuid, NodeWrangler);
+                            object obj = asset.GetObject(target.External.ClassGuid);
+                            if (obj == null)
+                            {
+                                App.Logger.LogError("Reference in connection was invalid");
+                                return;
+                            }
+                            
+                            targetNode = EntityNode.GetNodeFromEntity(obj, target.External.FileGuid, NodeWrangler);
                             cheap.SortGraph(targetNode);
                         
                             wrangler.AddVertexTransient(targetNode);
@@ -393,7 +459,7 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
                 
                 if (sourceNode.GetOutput(linkConnection.SourceField, ConnectionType.Link) == null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(delegate
                     {
                         sourceNode.AddOutput(new LinkOutput(linkConnection.SourceField, sourceNode));
                     });
@@ -401,7 +467,7 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
                 
                 if (targetNode.GetInput(linkConnection.TargetField, ConnectionType.Link) == null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(delegate
                     {
                         targetNode.AddInput(new LinkInput(linkConnection.TargetField, targetNode));
                     });
@@ -433,6 +499,11 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
                         if (((dynamic)source.Internal).GetInstanceGuid() == wrangler.InterfaceGuid)
                         {
                             sourceNode = wrangler.GetInterfaceNode(eventConnection.SourceEvent.Name, PortDirection.Out, ConnectionType.Event);
+                            if (sourceNode == null)
+                            {
+                                App.Logger.LogError("Unable to find an interface entry by the name of {0}", eventConnection.SourceEvent.Name.ToString());
+                                continue;
+                            }
                         }
                         else
                         {
@@ -446,7 +517,14 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
                         {
                             // Import the node
                             EbxAsset asset = App.AssetManager.GetEbx(App.AssetManager.GetEbxEntry(source.External.FileGuid));
-                            sourceNode = EntityNode.GetNodeFromEntity(asset.GetObject(source.External.ClassGuid), source.External.FileGuid, NodeWrangler);
+                            object obj = asset.GetObject(source.External.ClassGuid);
+                            if (obj == null)
+                            {
+                                App.Logger.LogError("Reference in connection was invalid");
+                                return;
+                            }
+                            
+                            sourceNode = EntityNode.GetNodeFromEntity(obj, target.External.FileGuid, NodeWrangler);
                             cheap.SortGraph(sourceNode);
                         
                             wrangler.AddVertexTransient(sourceNode);
@@ -466,6 +544,11 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
                         if (((dynamic)target.Internal).GetInstanceGuid() == wrangler.InterfaceGuid)
                         {
                             targetNode = wrangler.GetInterfaceNode(eventConnection.TargetEvent.Name, PortDirection.In, ConnectionType.Event);
+                            if (targetNode == null)
+                            {
+                                App.Logger.LogError("Unable to find an interface entry by the name of {0}", eventConnection.TargetEvent.ToString());
+                                continue;
+                            }
                         }
                         else
                         {
@@ -480,7 +563,14 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
                         if (targetNode == null)
                         {
                             EbxAsset asset = App.AssetManager.GetEbx(App.AssetManager.GetEbxEntry(target.External.FileGuid));
-                            targetNode = EntityNode.GetNodeFromEntity(asset.GetObject(target.External.ClassGuid), target.External.FileGuid, NodeWrangler);
+                            object obj = asset.GetObject(target.External.ClassGuid);
+                            if (obj == null)
+                            {
+                                App.Logger.LogError("Reference in connection was invalid");
+                                return;
+                            }
+                            
+                            targetNode = EntityNode.GetNodeFromEntity(obj, target.External.FileGuid, NodeWrangler);
                             cheap.SortGraph(targetNode);
                         
                             wrangler.AddVertexTransient(targetNode);
@@ -490,7 +580,7 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
                 
                 if (sourceNode.GetOutput(eventConnection.SourceEvent.Name, ConnectionType.Event) == null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(delegate
                     {
                         sourceNode.AddOutput(new EventOutput(eventConnection.SourceEvent.Name, sourceNode));
                     });
@@ -498,7 +588,7 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
                 
                 if (targetNode.GetInput(eventConnection.TargetEvent.Name, ConnectionType.Event) == null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(delegate
                     {
                         targetNode.AddInput(new EventInput(eventConnection.TargetEvent.Name, targetNode));
                     });
@@ -776,10 +866,10 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
 
         private void ClassSelector_OnItemDoubleClicked(object sender, MouseButtonEventArgs e)
         {
-            if (ClassList.SelectedClass == null)
+            if (ClassList.SelectedType == null)
                 return;
             
-            EntityNode node = EntityNode.GetNodeFromEntity(ClassList.SelectedClass, NodeWrangler);
+            EntityNode node = EntityNode.GetNodeFromEntity(ClassList.SelectedType, NodeWrangler);
             node.Location = new Point(Editor.ViewportLocation.X + (575 / Editor.ViewportZoom), Editor.ViewportLocation.Y + 287.5 / Editor.ViewportZoom);
             NodeWrangler.AddVertex(node);
         }
@@ -812,17 +902,17 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
         
         private void ClassList_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            if (ClassList.SelectedClass == null)
+            if (ClassList.SelectedType == null)
             {
                 EntDocBoxHeader.Text = "";
                 EntDocBoxText.Text = "";
                 return;
             }
             
-            EntDocBoxHeader.Text = ClassList.SelectedClass.Name;
-            if (ExtensionsManager.EntityNodeExtensions.ContainsKey(ClassList.SelectedClass.Name))
+            EntDocBoxHeader.Text = ClassList.SelectedType.Name;
+            if (ExtensionsManager.EntityNodeExtensions.ContainsKey(ClassList.SelectedType.Name))
             {
-                EntityNode node = (EntityNode)Activator.CreateInstance(ExtensionsManager.EntityNodeExtensions[ClassList.SelectedClass.Name]);
+                EntityNode node = (EntityNode)Activator.CreateInstance(ExtensionsManager.EntityNodeExtensions[ClassList.SelectedType.Name]);
                 EntDocBoxText.Text = node.ToolTip;
             }
         }
@@ -1029,10 +1119,10 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
             {
                 if (ToolboxTabControl.SelectedIndex == 0)
                 {
-                    if (ClassList.SelectedClass == null)
+                    if (ClassList.SelectedType == null)
                         return;
                     
-                    EntityNode node = EntityNode.GetNodeFromEntity(ClassList.SelectedClass, NodeWrangler);
+                    EntityNode node = EntityNode.GetNodeFromEntity(ClassList.SelectedType, NodeWrangler);
                     node.Location = Editor.MouseLocation;
                     NodeWrangler.AddVertex(node);
                 }
@@ -1092,37 +1182,126 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
                 if (item == null)
                     continue;
 
-                if (FilterBox.Text.StartsWith("guid:"))
+                // Parse text arguments
+                if (FilterBox.Text.Contains(':'))
                 {
-                    string guid = FilterBox.Text.Split(':').LastOrDefault();
-                    if (guid == null)
-                        return;
-
-                    if (!(vert is IEntityObject entityObject)) continue;
+                    string[] args = FilterBox.Text.Split(' ');
+                    item.Visibility = Visibility.Visible;
                     
-                    if (entityObject.InternalGuid.ToString() == guid)
-                        continue;
+                    foreach (string arg in args)
+                    {
+                        try
+                        {
+                            if (item.Visibility == Visibility.Collapsed)
+                                break;
+                        
+                            string p1 = arg.Split(':')[0].Trim();
+                            string p2 = arg.Split(':')[1].Trim();
 
-                    item.Visibility = Visibility.Collapsed;
-                }
-                else if (FilterBox.Text.StartsWith("fguid:"))
-                {
-                    string guid = FilterBox.Text.Split(':').LastOrDefault();
-                    if (guid == null)
-                        return;
+                            switch (p1)
+                            {
+                                case "guid":
+                                {
+                                    if (!(vert is IEntityObject entityObject))
+                                    {
+                                        item.Visibility = Visibility.Collapsed;
+                                        break;
+                                    }
 
-                    if (!(vert is IEntityObject entityObject)) continue;
-                    
-                    if (entityObject.FileGuid.ToString() == guid)
-                        continue;
+                                    if (entityObject.InternalGuid.ToString() != p2)
+                                    {
+                                        item.Visibility = Visibility.Collapsed;
+                                        break;
+                                    }
 
-                    item.Visibility = Visibility.Collapsed;
+                                    item.Visibility = Visibility.Visible;
+                                } break;
+                                case "fguid":
+                                {
+                                    if (!(vert is IEntityObject entityObject))
+                                    {
+                                        item.Visibility = Visibility.Collapsed;
+                                        break;
+                                    }
+
+                                    if (entityObject.FileGuid.ToString() == p2)
+                                    {
+                                        item.Visibility = Visibility.Collapsed;
+                                        break;
+                                    }
+
+                                    item.Visibility = Visibility.Visible;
+                                } break;
+                                case "search":
+                                {
+                                    if (!(vert.ToString().IndexOf(p2.ToLower(), StringComparison.OrdinalIgnoreCase) >= 0))
+                                    {
+                                        item.Visibility = Visibility.Collapsed;
+                                    }
+                                    else
+                                    {
+                                        item.Visibility = Visibility.Visible;
+                                    }
+                                } break;
+                                case "hasproperty":
+                                {
+                                    if (!(vert is IEntityNode entityNode))
+                                    {
+                                        item.Visibility = Visibility.Collapsed;
+                                        break;
+                                    }
+                                
+                                    if (entityNode.TryGetProperty(p2) != null)
+                                    {
+                                        item.Visibility = Visibility.Visible;
+                                        break;
+                                    }
+
+                                    item.Visibility = Visibility.Collapsed;
+                                } break;
+                                case "hasvalue":
+                                {
+                                    string c1 = p2.Split(',')[0].Trim();
+                                    string c2 = p2.Split(',')[1].Trim();
+                                
+                                    if (!(vert is IEntityNode entityNode))
+                                    {
+                                        item.Visibility = Visibility.Collapsed;
+                                        break;
+                                    }
+
+                                    object value = entityNode.TryGetProperty(c1);
+                                    if (value == null)
+                                    {
+                                        item.Visibility = Visibility.Collapsed;
+                                        break;
+                                    }
+
+                                    if (value.ToString().ToLower() == c2.ToLower())
+                                    {
+                                        item.Visibility = Visibility.Visible;
+                                        break;
+                                    }
+
+                                    item.Visibility = Visibility.Collapsed;
+                                } break;
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            App.Logger.LogError("Invalid search input");
+                        }
+                    }
                 }
                 else
                 {
                     if (!(vert.ToString().IndexOf(FilterBox.Text.ToLower(), StringComparison.OrdinalIgnoreCase) >= 0))
                     {
                         item.Visibility = Visibility.Collapsed;
+                    }
+                    else
+                    {
+                        item.Visibility = Visibility.Visible;
                     }
                 }
             }
@@ -1140,6 +1319,8 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
         }
 
         #endregion
+
+        #region Navigation
 
         private void RedirectGoToSource_OnClick(object sender, RoutedEventArgs e)
         {
@@ -1186,5 +1367,7 @@ namespace BlueprintEditorPlugin.Editors.BlueprintEditor
                 Editor.BringIntoView(location);
             }
         }
+
+        #endregion
     }
 }
